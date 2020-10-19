@@ -25,6 +25,7 @@ dependencies {
     implementation("com.github.seratch:kotliquery:1.3.1")
 
 
+    testImplementation("no.nav:kafka-embedded-env:2.4.0")
     testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
     testImplementation("io.mockk:mockk:1.10.2")
 

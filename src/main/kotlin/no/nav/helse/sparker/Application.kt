@@ -1,55 +1,74 @@
 package no.nav.helse.sparker
 
-
-import no.nav.helse.rapids_rivers.RapidApplication
-import no.nav.helse.rapids_rivers.RapidsConnection
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp
+import org.apache.kafka.common.PartitionInfo
+import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.io.File
-
+import java.time.Duration
+import java.time.LocalDate
+import java.time.ZoneId
 
 fun main() {
-    val env = System.getenv()
-    if ("true" == env["CRON_JOB_MODE"]?.toLowerCase()) return avstemmingJob(env)
-    rapidApp(env)
+    val config = System.getenv().let { env ->
+        KafkaConfig(
+            topicName = "helse-rapid-v1",
+            bootstrapServers = env.getValue("KAFKA_BOOTSTRAP_SERVERS"),
+            username = "/var/run/secrets/nais.io/service_user/username".readFile(),
+            password = "/var/run/secrets/nais.io/service_user/password".readFile(),
+            truststore = env["NAV_TRUSTSTORE_PATH"],
+            truststorePassword = env["NAV_TRUSTSTORE_PASSWORD"]
+        )
+    }
+
+    finnUtbetalingerJob(config, LocalDate.now())
 }
 
-private fun rapidApp(env: Map<String, String>) {
-    val dataSourceBuilder = DataSourceBuilder(env)
-    val dataSource = dataSourceBuilder.getDataSource()
+internal fun finnUtbetalingerJob(kafkaConfig: KafkaConfig, startTime: LocalDate) {
+    val logger = LoggerFactory.getLogger("no.nav.helse.sparker")
+    Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
 
-    RapidApplication.create(env).apply {
-    }.apply {
-        register(object : RapidsConnection.StatusListener {
-            override fun onStartup(rapidsConnection: RapidsConnection) {
-                dataSourceBuilder.migrate()
+    val consumer = klargjørConsumer(kafkaConfig, startTime)
+
+    while (true) {
+        consumer.poll(Duration.ofMillis(100)).let { records ->
+            if (records.isEmpty) {
+                logger.info("Alle meldinger prosessert.")
+                return
             }
-
-            override fun onShutdown(rapidsConnection: RapidsConnection) {
+            println("Mottok ${records.count()} meldinger")
+            records.forEach { record ->
+                logger.info("Key: ${record.key()} Value: ${record.value()} Partition: ${record.partition()} Offset: ${record.offset()}")
             }
-        })
-    }.start()
-}
-
-private fun avstemmingJob(env: Map<String, String>) {
-    val log = LoggerFactory.getLogger("no.nav.helse.sparker")
-    Thread.setDefaultUncaughtExceptionHandler { _, throwable -> log.error(throwable.message, throwable) }
-    val dataSourceBuilder = DataSourceBuilder(env)
-    val dataSource = dataSourceBuilder.getDataSource()
-    val kafkaConfig = KafkaConfig(
-        bootstrapServers = env.getValue("KAFKA_BOOTSTRAP_SERVERS"),
-        username = "/var/run/secrets/nais.io/service_user/username".readFile(),
-        password = "/var/run/secrets/nais.io/service_user/password".readFile(),
-        truststore = env["NAV_TRUSTSTORE_PATH"],
-        truststorePassword = env["NAV_TRUSTSTORE_PASSWORD"]
-    )
-    val strings = StringSerializer()
-
-    KafkaProducer(kafkaConfig.producerConfig(), strings, strings).use { producer ->
-        producer.flush()
+        }
     }
 }
 
+private fun klargjørConsumer(kafkaConfig: KafkaConfig, startTime: LocalDate): KafkaConsumer<String, String> {
+    val consumer = KafkaConsumer(kafkaConfig.consumerConfig(), StringDeserializer(), StringDeserializer())
+
+    // Get the list of partitions and transform PartitionInfo into TopicPartition
+    val topicPartitions: List<TopicPartition> = consumer.partitionsFor(kafkaConfig.topicName)
+        .map { info: PartitionInfo -> TopicPartition(kafkaConfig.topicName, info.partition()) }
+
+    // Assign the consumer to these partitions
+    consumer.assign(topicPartitions)
+
+    val startTimeMillis = startTime.toMillis()
+    // Look for offsets based on timestamp
+    val partitionOffsets: Map<TopicPartition, OffsetAndTimestamp?> =
+        consumer.offsetsForTimes(topicPartitions.associateBy({ it }, { startTimeMillis }))
+
+    // Force the consumer to seek for those offsets
+    partitionOffsets.forEach { (tp: TopicPartition, offsetAndTimestamp: OffsetAndTimestamp?) ->
+        consumer.seek(tp, offsetAndTimestamp?.offset() ?: 0)
+    }
+
+    return consumer
+}
+
+private fun LocalDate.toMillis() = atStartOfDay(ZoneId.of("Europe/Oslo")).toEpochSecond()
 
 private fun String.readFile() = File(this).readText(Charsets.UTF_8)
