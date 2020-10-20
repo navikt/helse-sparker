@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
+val kafkaVersion = "2.4.0"
 val junitJupiterVersion = "5.7.0"
 
 plugins {
@@ -9,21 +10,19 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://kotlin.bintray.com/ktor")
     maven("https://jitpack.io")
-    maven {
-        url = uri("https://maven.pkg.github.com/navikt/rapids-and-rivers")
-    }
+    maven("https://packages.confluent.io/maven/")
 }
 
 dependencies {
-    implementation("com.github.navikt:rapids-and-rivers:1.a66bba7")
+    api(kotlin("stdlib-jdk8"))
+    api("org.apache.kafka:kafka-clients:$kafkaVersion")
 
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.4.10")
     implementation("org.flywaydb:flyway-core:7.0.4")
     implementation("com.zaxxer:HikariCP:3.4.5")
     implementation("no.nav:vault-jdbc:1.3.7")
     implementation("com.github.seratch:kotliquery:1.3.1")
-
 
     testImplementation("no.nav:kafka-embedded-env:2.4.0")
     testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
