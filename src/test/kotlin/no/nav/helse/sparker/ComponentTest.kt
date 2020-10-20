@@ -18,19 +18,19 @@ import java.util.*
 import kotlin.collections.set
 
 @TestInstance(Lifecycle.PER_CLASS)
-internal class RapidApplicationComponentTest {
+internal class ComponentTest {
 
     private lateinit var producer: KafkaProducer<String, String>
     private val topic = "test-topic"
     private val topicInfos = listOf(
-            KafkaEnvironment.TopicInfo(topic, partitions = 1)
+        KafkaEnvironment.TopicInfo(topic, partitions = 1)
     )
     private val embeddedKafkaEnvironment = KafkaEnvironment(
-            autoStart = false,
-            noOfBrokers = 1,
-            topicInfos = topicInfos,
-            withSchemaRegistry = false,
-            withSecurity = false
+        autoStart = false,
+        noOfBrokers = 1,
+        topicInfos = topicInfos,
+        withSchemaRegistry = false,
+        withSecurity = false
     )
 
     lateinit var consumer: KafkaConsumer<String, String>
