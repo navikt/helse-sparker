@@ -1,5 +1,8 @@
 package no.nav.helse.sparker
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp
 import org.apache.kafka.common.PartitionInfo
@@ -10,6 +13,10 @@ import java.io.File
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
+
+val objectMapper = jacksonObjectMapper()
+    .registerModule(JavaTimeModule())
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
 fun main() {
     val config = System.getenv().let { env ->
@@ -26,7 +33,7 @@ fun main() {
     finnUtbetalingerJob(config, LocalDate.now())
 }
 
-internal fun finnUtbetalingerJob(kafkaConfig: KafkaConfig, startTime: LocalDate) {
+internal fun finnUtbetalingerJob(kafkaConfig: KafkaConfig, startTime: LocalDate, gReguleringsHandler: GReguleringsHandler = GReguleringsHandler()) {
     val logger = LoggerFactory.getLogger("no.nav.helse.sparker")
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
 
@@ -36,12 +43,22 @@ internal fun finnUtbetalingerJob(kafkaConfig: KafkaConfig, startTime: LocalDate)
         consumer.poll(Duration.ofMillis(100)).let { records ->
             if (records.isEmpty) {
                 logger.info("Alle meldinger prosessert.")
+                consumer.unsubscribe()
+                consumer.close()
                 return
             }
             println("Mottok ${records.count()} meldinger")
-            records.forEach { record ->
-                logger.info("Key: ${record.key()} Value: ${record.value()} Partition: ${record.partition()} Offset: ${record.offset()}")
-            }
+            records
+                .map {
+                    objectMapper.readTree(it.value())
+                }
+                .filter {
+                    it["type"]?.asText() == "SykepengerUtbetalt_v1"
+                }
+                .forEach { node ->
+                    logger.info("Node: ${node}")
+                    gReguleringsHandler.handle()
+                }
         }
     }
 }

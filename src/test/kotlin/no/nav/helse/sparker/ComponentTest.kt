@@ -1,12 +1,11 @@
 package no.nav.helse.sparker
 
+import io.mockk.spyk
+import io.mockk.verify
 import no.nav.common.KafkaEnvironment
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -33,18 +32,19 @@ internal class ComponentTest {
         withSecurity = false
     )
 
-    lateinit var consumer: KafkaConsumer<String, String>
+    private val gReguleringsHandlerMock = spyk<GReguleringsHandler>()
 
     @BeforeAll
     fun `setup`() {
         embeddedKafkaEnvironment.start()
         producer = KafkaProducer(baseConfig().toProducerConfig())
-        consumer = KafkaConsumer(baseConfig().toConsumerConfig())
 
         val (fom1, tom1) = LocalDate.of(2020, 3, 1) to LocalDate.of(2020, 3, 15)
 
-        repeat(42) { producer.send(ProducerRecord(topic, vedtak(fom1, tom1))) }
+        repeat(42) { producer.send(ProducerRecord(topic, utbetaling(fom1, tom1))) }
+        repeat(10) { producer.send(ProducerRecord(topic, bareTull(fom1, tom1))) }
         producer.flush()
+        producer.close()
     }
 
     @Test
@@ -56,12 +56,13 @@ internal class ComponentTest {
             password = "password"
         )
 
-        finnUtbetalingerJob(kafkaConfig, LocalDate.now())
+        finnUtbetalingerJob(kafkaConfig, LocalDate.now(), gReguleringsHandlerMock)
+        verify(exactly = 42) { gReguleringsHandlerMock.handle() }
     }
 
     @AfterAll
     fun `cleanup`() {
-        embeddedKafkaEnvironment.close()
+        embeddedKafkaEnvironment.tearDown()
     }
 
     private fun baseConfig(): Properties = Properties().also {
@@ -73,7 +74,7 @@ internal class ComponentTest {
 }
 
 
-private fun vedtak(fom: LocalDate, tom: LocalDate) = """
+private fun utbetaling(fom: LocalDate, tom: LocalDate) = """
     {
       "type": "SykepengerUtbetalt_v1",
       "opprettet": "2020-04-29T12:00:00",
@@ -86,11 +87,18 @@ private fun vedtak(fom: LocalDate, tom: LocalDate) = """
     }
 """
 
-fun Properties.toConsumerConfig() = Properties().also {
-    it.putAll(this)
-    it[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-    it[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-}
+private fun bareTull(fom: LocalDate, tom: LocalDate) = """
+    {
+      "type": "BareTull_v1",
+      "opprettet": "2020-04-29T12:00:00",
+      "aktørId": "aktørId",
+      "fødselsnummer": "fnr",
+      "førsteStønadsdag": "$fom",
+      "sisteStønadsdag": "$tom",
+      "førsteFraværsdag": "$fom",
+      "forbrukteStønadsdager": 123
+    }
+"""
 
 fun Properties.toProducerConfig(): Properties = Properties().also {
     it.putAll(this)

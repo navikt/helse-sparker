@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
 val kafkaVersion = "2.4.0"
 val junitJupiterVersion = "5.7.0"
+val jacksonVersion = "2.11.3"
 
 plugins {
     kotlin("jvm") version "1.4.10"
@@ -24,7 +25,12 @@ dependencies {
     implementation("no.nav:vault-jdbc:1.3.7")
     implementation("org.postgresql:postgresql:42.2.13")
     implementation("com.github.seratch:kotliquery:1.3.1")
-    implementation("org.slf4j:slf4j-api:1.3.1")
+    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+
 
     testImplementation("no.nav:kafka-embedded-env:2.5.0")
     constraints {
