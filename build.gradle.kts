@@ -29,7 +29,7 @@ dependencies {
     testImplementation("no.nav:kafka-embedded-env:2.5.0")
     constraints {
         testImplementation("org.apache.kafka:kafka_2.12:2.6.0")
-        testImplementation("org.glassfish.jersey.core:jersey-server:2.3.1")
+        testImplementation("org.glassfish.jersey.core:jersey-server:2.31")
     }
     testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
     testImplementation("io.mockk:mockk:1.10.2")
