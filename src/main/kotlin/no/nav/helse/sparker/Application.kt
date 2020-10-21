@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.PartitionInfo
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Duration
@@ -34,15 +35,15 @@ fun main() {
     val startDate = LocalDate.now()
     val fagsystemIdDao = PostgresFagsystemIdDao()
 
-    val etterbetalingHåntdterer = EtterbetalingHåntdterer(fagsystemIdDao, config.topicName, startDate)
+    val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
     finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
 }
 
-internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, etterbetalingHåntdterer: EtterbetalingHåntdterer) {
+internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, etterbetalingHåntdterer: EtterbetalingHåndterer) {
     val logger = LoggerFactory.getLogger("no.nav.helse.sparker")
 
     val consumer = klargjørConsumer(config, startDate)
-    val producer = KafkaProducer<String, String>(config.producerConfig())
+    val producer = KafkaProducer(config.producerConfig(), StringSerializer(), StringSerializer())
 
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
     while (true) {
@@ -51,6 +52,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 logger.info("Alle meldinger prosessert.")
                 consumer.unsubscribe()
                 consumer.close()
+                producer.flush()
                 producer.close()
                 return
             }
@@ -60,18 +62,17 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     objectMapper.readTree(it.value())
                 }
                 .filter { node ->
-                    node["type"]?.asText() == "SykepengerUtbetalt_v1" &&
-                        node["opprettet"]?.asText()?.let(LocalDate::parse)?.let { startDate < it } ?: false
+                    node["type"]?.asText() == "SykepengerUtbetalt_v1"
                 }
                 .forEach { node ->
-                    logger.info("Node: ${node}")
+                    //logger.info("Node: ${node}")
                     etterbetalingHåntdterer.håndter(node, producer)
                 }
         }
     }
 }
 
-private fun klargjørConsumer(kafkaConfig: KafkaConfig, startDate: LocalDate): KafkaConsumer<String, String> {
+internal fun klargjørConsumer(kafkaConfig: KafkaConfig, startDate: LocalDate): KafkaConsumer<String, String> {
     val consumer = KafkaConsumer(kafkaConfig.consumerConfig(), StringDeserializer(), StringDeserializer())
 
     // Get the list of partitions and transform PartitionInfo into TopicPartition

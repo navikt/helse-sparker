@@ -1,12 +1,15 @@
 package no.nav.helse.sparker
 
 import no.nav.common.KafkaEnvironment
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
+import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -40,10 +43,10 @@ internal class ComponentTest {
         embeddedKafkaEnvironment.start()
         producer = KafkaProducer(baseConfig().toProducerConfig())
 
-        val (fom1, tom1) = LocalDate.of(2020, 3, 1) to LocalDate.of(2020, 3, 15)
+        val førsteFrværsdag = LocalDate.of(2020, 3, 1)
 
-        repeat(42) { producer.send(ProducerRecord(topic, utbetaling(fom1, tom1))) }
-        repeat(10) { producer.send(ProducerRecord(topic, bareTull(fom1, tom1))) }
+        repeat(42) { producer.send(ProducerRecord(topic, utbetaling(førsteFrværsdag))) }
+        repeat(10) { producer.send(ProducerRecord(topic, bareTull(førsteFrværsdag))) }
         producer.flush()
         producer.close()
     }
@@ -57,13 +60,14 @@ internal class ComponentTest {
             password = "password"
         )
         val daoMock = FagsystemIdDaoMock()
-        val etterbetalingHåntdterer = EtterbetalingHåntdterer(daoMock, kafkaConfig.topicName, LocalDate.now())
+        val etterbetalingHåntdterer = EtterbetalingHåndterer(daoMock, kafkaConfig.topicName, LocalDate.now())
 
         finnUtbetalingerJob(kafkaConfig, LocalDate.now(), etterbetalingHåntdterer)
 
-        val consumer = KafkaConsumer(kafkaConfig.consumerConfig(), StringDeserializer(), StringDeserializer())
-        assertEquals(consumer.poll(Duration.ofMillis(100)).count(), 53)
-
+        val consumer = KafkaConsumer<String, String>(baseConfig().toConsumerConfig())
+        consumer.assign(listOf(TopicPartition(topic, 0)))
+        consumer.seekToBeginning(consumer.assignment())
+        assertEquals(53, consumer.poll(Duration.ofMillis(100)).count())
     }
 
     @AfterAll
@@ -79,30 +83,29 @@ internal class ComponentTest {
     }
 }
 
-
-private fun utbetaling(fom: LocalDate, tom: LocalDate) = """
+@Language("JSON")
+private fun utbetaling(førsteFraværsdag: LocalDate) = """
     {
       "type": "SykepengerUtbetalt_v1",
       "opprettet": "2020-04-29T12:00:00",
       "aktørId": "aktørId",
       "fødselsnummer": "fnr",
-      "førsteStønadsdag": "$fom",
-      "sisteStønadsdag": "$tom",
-      "førsteFraværsdag": "$fom",
-      "forbrukteStønadsdager": 123
+      "førsteFraværsdag": "$førsteFraværsdag",
+      "fagsystemId": "FAGSYSTEM_ID",
+      "organisasjonsnummer": "1234"
     }
 """
 
-private fun bareTull(fom: LocalDate, tom: LocalDate) = """
+@Language("JSON")
+private fun bareTull(førsteFraværsdag: LocalDate) = """
     {
       "type": "BareTull_v1",
       "opprettet": "2020-04-29T12:00:00",
       "aktørId": "aktørId",
       "fødselsnummer": "fnr",
-      "førsteStønadsdag": "$fom",
-      "sisteStønadsdag": "$tom",
-      "førsteFraværsdag": "$fom",
-      "forbrukteStønadsdager": 123
+      "førsteFraværsdag": "$førsteFraværsdag",
+      "fagsystemId": "FAGSYSTEM_ID",
+      "organisasjonsnummer": "1234"
     }
 """
 
@@ -110,4 +113,12 @@ fun Properties.toProducerConfig(): Properties = Properties().also {
     it.putAll(this)
     it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
     it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+}
+
+fun Properties.toConsumerConfig(): Properties = Properties().also {
+    it.putAll(this)
+    it[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
+    it[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
+    it[ConsumerConfig.GROUP_ID_CONFIG] = "sparker-test"
+    it[ConsumerConfig.CLIENT_ID_CONFIG] = "test"
 }

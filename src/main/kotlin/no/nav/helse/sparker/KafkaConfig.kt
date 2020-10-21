@@ -2,6 +2,7 @@ package no.nav.helse.sparker
 
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.slf4j.LoggerFactory
@@ -23,7 +24,10 @@ internal class KafkaConfig(
         put(ConsumerConfig.GROUP_ID_CONFIG, "sparker")
     }
 
-    internal fun producerConfig() = Properties()
+    internal fun producerConfig() = Properties().apply {
+        putAll(kafkaBaseConfig())
+        put(ProducerConfig.CLIENT_ID_CONFIG, "sparker")
+    }
 
     private fun kafkaBaseConfig() = Properties().apply {
         put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers)
