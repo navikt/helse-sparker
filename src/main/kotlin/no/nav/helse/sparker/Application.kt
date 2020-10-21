@@ -15,6 +15,7 @@ import java.io.File
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
+import javax.sql.DataSource
 
 val objectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
@@ -33,7 +34,7 @@ fun main() {
         )
     }
     val startDate = LocalDate.now()
-    val fagsystemIdDao = PostgresFagsystemIdDao()
+    val fagsystemIdDao = PostgresFagsystemIdDao(Object() as DataSource)
 
     val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
     finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
