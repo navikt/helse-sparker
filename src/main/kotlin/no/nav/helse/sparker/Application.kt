@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp
+import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.PartitionInfo
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -18,6 +19,7 @@ val objectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
+
 fun main() {
     val config = System.getenv().let { env ->
         KafkaConfig(
@@ -29,22 +31,27 @@ fun main() {
             truststorePassword = env["NAV_TRUSTSTORE_PASSWORD"]
         )
     }
+    val startDate = LocalDate.now()
+    val fagsystemIdDao = PostgresFagsystemIdDao()
 
-    finnUtbetalingerJob(config, LocalDate.now())
+    val etterbetalingHåntdterer = EtterbetalingHåntdterer(fagsystemIdDao, config.topicName, startDate)
+    finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
 }
 
-internal fun finnUtbetalingerJob(kafkaConfig: KafkaConfig, startTime: LocalDate, gReguleringsHandler: GReguleringsHandler = GReguleringsHandler()) {
+internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, etterbetalingHåntdterer: EtterbetalingHåntdterer) {
     val logger = LoggerFactory.getLogger("no.nav.helse.sparker")
+
+    val consumer = klargjørConsumer(config, startDate)
+    val producer = KafkaProducer<String, String>(config.producerConfig())
+
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
-
-    val consumer = klargjørConsumer(kafkaConfig, startTime)
-
     while (true) {
         consumer.poll(Duration.ofMillis(100)).let { records ->
             if (records.isEmpty) {
                 logger.info("Alle meldinger prosessert.")
                 consumer.unsubscribe()
                 consumer.close()
+                producer.close()
                 return
             }
             println("Mottok ${records.count()} meldinger")
@@ -52,18 +59,19 @@ internal fun finnUtbetalingerJob(kafkaConfig: KafkaConfig, startTime: LocalDate,
                 .map {
                     objectMapper.readTree(it.value())
                 }
-                .filter {
-                    it["type"]?.asText() == "SykepengerUtbetalt_v1"
+                .filter { node ->
+                    node["type"]?.asText() == "SykepengerUtbetalt_v1" &&
+                        node["opprettet"]?.asText()?.let(LocalDate::parse)?.let { startDate < it } ?: false
                 }
                 .forEach { node ->
                     logger.info("Node: ${node}")
-                    gReguleringsHandler.handle()
+                    etterbetalingHåntdterer.håndter(node, producer)
                 }
         }
     }
 }
 
-private fun klargjørConsumer(kafkaConfig: KafkaConfig, startTime: LocalDate): KafkaConsumer<String, String> {
+private fun klargjørConsumer(kafkaConfig: KafkaConfig, startDate: LocalDate): KafkaConsumer<String, String> {
     val consumer = KafkaConsumer(kafkaConfig.consumerConfig(), StringDeserializer(), StringDeserializer())
 
     // Get the list of partitions and transform PartitionInfo into TopicPartition
@@ -73,7 +81,7 @@ private fun klargjørConsumer(kafkaConfig: KafkaConfig, startTime: LocalDate): K
     // Assign the consumer to these partitions
     consumer.assign(topicPartitions)
 
-    val startTimeMillis = startTime.toMillis()
+    val startTimeMillis = startDate.toMillis()
     // Look for offsets based on timestamp
     val partitionOffsets: Map<TopicPartition, OffsetAndTimestamp?> =
         consumer.offsetsForTimes(topicPartitions.associateBy({ it }, { startTimeMillis }))
@@ -85,6 +93,7 @@ private fun klargjørConsumer(kafkaConfig: KafkaConfig, startTime: LocalDate): K
 
     return consumer
 }
+
 
 private fun LocalDate.toMillis() = atStartOfDay(ZoneId.of("Europe/Oslo")).toEpochSecond()
 

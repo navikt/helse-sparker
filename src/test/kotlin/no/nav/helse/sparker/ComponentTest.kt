@@ -1,17 +1,19 @@
 package no.nav.helse.sparker
 
-import io.mockk.spyk
-import io.mockk.verify
 import no.nav.common.KafkaEnvironment
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
+import java.time.Duration
 import java.time.LocalDate
 import java.util.*
 import kotlin.collections.set
@@ -32,7 +34,6 @@ internal class ComponentTest {
         withSecurity = false
     )
 
-    private val gReguleringsHandlerMock = spyk<GReguleringsHandler>()
 
     @BeforeAll
     fun `setup`() {
@@ -55,9 +56,14 @@ internal class ComponentTest {
             username = "username",
             password = "password"
         )
+        val daoMock = FagsystemIdDaoMock()
+        val etterbetalingHåntdterer = EtterbetalingHåntdterer(daoMock, kafkaConfig.topicName, LocalDate.now())
 
-        finnUtbetalingerJob(kafkaConfig, LocalDate.now(), gReguleringsHandlerMock)
-        verify(exactly = 42) { gReguleringsHandlerMock.handle() }
+        finnUtbetalingerJob(kafkaConfig, LocalDate.now(), etterbetalingHåntdterer)
+
+        val consumer = KafkaConsumer(kafkaConfig.consumerConfig(), StringDeserializer(), StringDeserializer())
+        assertEquals(consumer.poll(Duration.ofMillis(100)).count(), 53)
+
     }
 
     @AfterAll

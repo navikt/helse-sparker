@@ -23,6 +23,8 @@ internal class KafkaConfig(
         put(ConsumerConfig.GROUP_ID_CONFIG, "sparker")
     }
 
+    internal fun producerConfig() = Properties()
+
     private fun kafkaBaseConfig() = Properties().apply {
         put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers)
         put(SaslConfigs.SASL_MECHANISM, "PLAIN")
