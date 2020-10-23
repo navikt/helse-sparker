@@ -48,8 +48,6 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
 
     var count = 0
 
-    logger.info("Ferdig!")
-    return
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
     while (true) {
         consumer.poll(Duration.ofMillis(100)).let { records ->
