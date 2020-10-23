@@ -1,5 +1,6 @@
 package no.nav.helse.sparker
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -67,6 +68,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 }
                 .filter { node ->
                     node["@event_name"]?.asText() == "utbetalt"
+                        && node["førsteFraværsdag"]?.asLocalDate()?.isAfter(startDate) ?: false
                 }
                 .forEach { node ->
                     if (count++ % 100 == 0) logger.info("Har prosessert $count events")
@@ -103,3 +105,5 @@ internal fun klargjørConsumer(kafkaConfig: KafkaConfig, startDate: LocalDate): 
 private fun LocalDate.toMillis() = atStartOfDay(ZoneId.of("Europe/Oslo")).toEpochSecond()
 
 private fun String.readFile() = File(this).readText(Charsets.UTF_8)
+
+private fun JsonNode.asLocalDate() = asText().let { LocalDate.parse(it) }
