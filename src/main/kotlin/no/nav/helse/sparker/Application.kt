@@ -32,7 +32,7 @@ fun main() {
             truststorePassword = env["NAV_TRUSTSTORE_PASSWORD"]
         )
     }
-    val startDate = LocalDate.now()
+    val startDate = LocalDate.of(2020, 5, 1)
     val fagsystemIdDao = FagsystemIdDaoMock()
 
     val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
