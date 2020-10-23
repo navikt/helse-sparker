@@ -1,9 +1,9 @@
 apiVersion: batch/v1beta1
 kind: Job
 metadata:
-  labels:
+    labels:
     team: tbd
-  name: sparker
+  name: helse-sparker
   namespace: tbd
 spec:
   jobTemplate:
@@ -13,17 +13,17 @@ spec:
       template:
         spec:
           containers:
-            - name: sparker
-              image: {{image}}
-              resources:
-                requests:
-                  memory: 256Mi
-                  cpu: 100m
-                limits:
-                  memory: 4096Mi
-                  cpu: 2000m
-              volumeMounts:
-                - mountPath: /var/run/secrets/nais.io/vault
+              -   name: helse-sparker
+                  image: {{image}}
+                  resources:
+                      requests:
+                          memory: 256Mi
+                          cpu: 100m
+                      limits:
+                          memory: 4096Mi
+                          cpu: 2000m
+                  volumeMounts:
+                      -   mountPath: /var/run/secrets/nais.io/vault
                   name: vault-secrets
                   subPath: subpath/var/run/secrets/nais.io/vault
                 - mountPath: /var/run/secrets/nais.io/service_user
@@ -35,8 +35,6 @@ spec:
               env:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
-                - name: CRON_JOB_MODE
-                  value: "true"
                 - name: KAFKA_BOOTSTRAP_SERVERS
                   value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
                 - name: KAFKA_RAPID_TOPIC
@@ -83,8 +81,8 @@ spec:
               env:
                 - name: VAULT_AUTH_METHOD
                   value: kubernetes
-                - name: VAULT_SIDEKICK_ROLE
-                  value: sparker
+                -   name: VAULT_SIDEKICK_ROLE
+                    value: helse-sparker
                 - name: VAULT_K8S_LOGIN_PATH
                   value: auth/kubernetes/preprod/fss/login
           serviceAccount: podcreator

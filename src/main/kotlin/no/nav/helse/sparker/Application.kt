@@ -15,7 +15,6 @@ import java.io.File
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
-import javax.sql.DataSource
 
 val objectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
@@ -25,7 +24,7 @@ val objectMapper = jacksonObjectMapper()
 fun main() {
     val config = System.getenv().let { env ->
         KafkaConfig(
-            topicName = "helse-rapid-v1",
+            topicName = env.getValue("KAFKA_RAPID_TOPIC"),
             bootstrapServers = env.getValue("KAFKA_BOOTSTRAP_SERVERS"),
             username = "/var/run/secrets/nais.io/service_user/username".readFile(),
             password = "/var/run/secrets/nais.io/service_user/password".readFile(),
@@ -34,7 +33,7 @@ fun main() {
         )
     }
     val startDate = LocalDate.now()
-    val fagsystemIdDao = PostgresFagsystemIdDao(Object() as DataSource)
+    val fagsystemIdDao = FagsystemIdDaoMock()
 
     val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
     finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
@@ -46,6 +45,9 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
     val consumer = klargjørConsumer(config, startDate)
     val producer = KafkaProducer(config.producerConfig(), StringSerializer(), StringSerializer())
 
+
+    var count = 0
+
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
     while (true) {
         consumer.poll(Duration.ofMillis(100)).let { records ->
@@ -55,9 +57,9 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 consumer.close()
                 producer.flush()
                 producer.close()
+                logger.info("Prosessert $count utbetalinger")
                 return
             }
-            println("Mottok ${records.count()} meldinger")
             records
                 .map {
                     objectMapper.readTree(it.value())
@@ -66,8 +68,8 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     node["type"]?.asText() == "SykepengerUtbetalt_v1"
                 }
                 .forEach { node ->
-                    //logger.info("Node: ${node}")
                     etterbetalingHåntdterer.håndter(node, producer)
+                    count++
                 }
         }
     }
