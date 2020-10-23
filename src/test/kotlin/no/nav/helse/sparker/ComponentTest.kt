@@ -86,7 +86,7 @@ internal class ComponentTest {
 @Language("JSON")
 private fun utbetaling(førsteFraværsdag: LocalDate) = """
     {
-      "type": "SykepengerUtbetalt_v1",
+      "@event_name": "utbetalt",
       "opprettet": "2020-04-29T12:00:00",
       "aktørId": "aktørId",
       "fødselsnummer": "fnr",
