@@ -9,6 +9,8 @@ spec:
   ttlSecondsAfterFinished: 43200
   completions: 1
   backoffLimit: 1
+  secureLogs:
+    enabled: true
   template:
     spec:
       containers:
