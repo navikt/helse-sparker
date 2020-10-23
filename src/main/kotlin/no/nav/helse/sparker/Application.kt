@@ -60,6 +60,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 logger.info("Prosessert $count utbetalinger")
                 return
             }
+            logger.info("fant ${records.count()} meldinger")
             records
                 .map {
                     objectMapper.readTree(it.value())
