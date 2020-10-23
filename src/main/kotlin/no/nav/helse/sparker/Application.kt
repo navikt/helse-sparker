@@ -68,8 +68,8 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     node["@event_name"]?.asText() == "utbetalt"
                 }
                 .forEach { node ->
+                    if (count++ % 100 == 0) logger.info("Har prosessert $count events")
                     etterbetalingHåntdterer.håndter(node, producer)
-                    count++
                 }
         }
     }

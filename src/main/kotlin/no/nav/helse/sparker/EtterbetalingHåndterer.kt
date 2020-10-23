@@ -17,17 +17,22 @@ class EtterbetalingHåndterer(
     val logger = LoggerFactory.getLogger(this.javaClass)
 
     internal fun håndter(node: JsonNode, producer: KafkaProducer<String, String>) {
-        val fagsystemId = node["fagsystemId"]?.asText()
-        if (fagsystemId == null) {
-            sikkerlogg.info("fagsystemId mangler på denne", keyValue("utbetaltEvent", node))
+        if (!node.has("utbetalt")) {
+            sikkerlogg.info("Feltet 'utbetalt' mangler på denne", keyValue("utbetaltEvent", node))
             return
         }
-        if (fagsystemIdDao.alleredeHåndtert(fagsystemId)) return
-        //producer.send(
-        ProducerRecord<String, String>(topic, objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato)))
-        fagsystemIdDao.lagre(fagsystemId)
-        /*).get().let { _ ->
+        node["utbetalt"].filter { !it["utbetalingslinjer"].isEmpty }.forEach { utbetaling ->
+            val fagsystemId = utbetaling["fagsystemId"].textValue()
+            if (fagsystemIdDao.alleredeHåndtert(fagsystemId)) return
+            //producer.send(
+            ProducerRecord<String, String>(topic, objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato, fagsystemId)))
             fagsystemIdDao.lagre(fagsystemId)
-        }*/
+            /*).get().let { _ ->
+                fagsystemIdDao.lagre(fagsystemId)
+            }*/
+
+        }
     }
 }
+
+

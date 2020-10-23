@@ -46,6 +46,7 @@ internal class ComponentTest {
         val førsteFrværsdag = LocalDate.of(2020, 3, 1)
 
         repeat(42) { producer.send(ProducerRecord(topic, utbetaling(førsteFrværsdag))) }
+        repeat(10) { producer.send(ProducerRecord(topic, utbetaling_ikke_støttet(førsteFrværsdag))) }
         repeat(10) { producer.send(ProducerRecord(topic, bareTull(førsteFrværsdag))) }
         producer.flush()
         producer.close()
@@ -84,7 +85,7 @@ internal class ComponentTest {
 }
 
 @Language("JSON")
-private fun utbetaling(førsteFraværsdag: LocalDate) = """
+private fun utbetaling_ikke_støttet(førsteFraværsdag: LocalDate) = """
     {
       "@event_name": "utbetalt",
       "opprettet": "2020-04-29T12:00:00",
@@ -94,6 +95,64 @@ private fun utbetaling(førsteFraværsdag: LocalDate) = """
       "fagsystemId": "FAGSYSTEM_ID",
       "organisasjonsnummer": "1234"
     }
+"""
+
+@Language("JSON")
+private fun utbetaling(førsteFraværsdag: LocalDate) = """{
+    "aktørId": "1000000000091",
+    "fødselsnummer": "22027821111",
+    "organisasjonsnummer": "971555001",
+    "hendelser": [
+      "7cbe2ffb-b344-4691-8900-e6d4df0679ab",
+      "924c3209-a0f1-48b9-a57f-d3d8962aaebc"
+    ],
+    "utbetalt": [
+      {
+        "mottaker": "971555001",
+        "fagområde": "SPREF",
+        "fagsystemId": "YNQXJGM73ZHPBBTM7LVG5RJPYM",
+        "totalbeløp": 27421,
+        "utbetalingslinjer": [
+          {
+            "fom": "2020-04-20",
+            "tom": "2020-05-12",
+            "dagsats": 1613,
+            "beløp": 1613,
+            "grad": 100,
+            "sykedager": 17
+          }
+        ]
+      },
+      {
+        "mottaker": "22027821111",
+        "fagområde": "SP",
+        "fagsystemId": "F35FQNCJAFC73DMKM2DW2XYUMA",
+        "totalbeløp": 0,
+        "utbetalingslinjer": []
+      }
+    ],
+    "fom": "2020-04-20",
+    "tom": "2020-05-12",
+    "forbrukteSykedager": 140,
+    "gjenståendeSykedager": 108,
+    "opprettet": "2020-05-13T05:35:38.057426",
+    "system_read_count": 0,
+    "system_participating_services": [
+      {
+        "service": "spleis",
+        "instance": "spleis-69b7cb4bf4-frxdw",
+        "time": "2020-05-13T16:15:41.81766"
+      }
+    ],
+    "@event_name": "utbetalt",
+    "@id": "34840b34-f9c0-4153-928d-7bb4e8b379ce",
+    "@opprettet": "2020-05-13T16:15:41.81768",
+    "@forårsaket_av": {
+      "event_name": "behov",
+      "id": "e75856ca-3d5c-4987-b755-8df834e82331",
+      "opprettet": "2020-05-13T16:15:41.667048"
+    }
+  }
 """
 
 @Language("JSON")

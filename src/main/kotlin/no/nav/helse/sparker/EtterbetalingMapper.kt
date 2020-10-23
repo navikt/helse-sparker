@@ -5,12 +5,12 @@ import java.time.LocalDate
 import java.util.*
 
 
-fun mapTilEtterbetalingEvent(inputNode: JsonNode, gyldighetsdato: LocalDate): Map<String, Any> =
+fun mapTilEtterbetalingEvent(inputNode: JsonNode, gyldighetsdato: LocalDate, fagsystemId: String): Map<String, Any> =
     mapOf(
         "@id" to UUID.randomUUID(),
         "@event_name" to "Etterbetalingskandidat_v1",
         "@opprettet" to LocalDate.now(),
-        "fagsystemId" to inputNode["fagsystemId"].asText(),
+        "fagsystemId" to fagsystemId,
         "aktørId" to inputNode["aktørId"].asText(),
         "fødselsnummer" to inputNode["fødselsnummer"].asText(),
         "organisasjonsnummer" to inputNode["organisasjonsnummer"].asText(),
