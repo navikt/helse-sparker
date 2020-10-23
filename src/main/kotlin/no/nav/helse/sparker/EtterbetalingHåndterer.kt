@@ -19,6 +19,7 @@ class EtterbetalingHåndterer(
         if (fagsystemIdDao.alleredeHåndtert(fagsystemId)) return
         //producer.send(
         ProducerRecord<String, String>(topic, objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato)))
+        fagsystemIdDao.lagre(fagsystemId)
         /*).get().let { _ ->
             fagsystemIdDao.lagre(fagsystemId)
         }*/
