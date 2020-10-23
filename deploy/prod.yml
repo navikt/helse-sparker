@@ -1,7 +1,7 @@
 apiVersion: batch/v1beta1
 kind: Job
 metadata:
-    labels:
+  labels:
     team: tbd
   name: helse-sparker
   namespace: tbd
@@ -13,17 +13,17 @@ spec:
       template:
         spec:
           containers:
-              -   name: helse-sparker
-                  image: {{image}}
-                  resources:
-                      requests:
-                          memory: 256Mi
-                          cpu: 100m
-                      limits:
-                          memory: 4096Mi
-                          cpu: 2000m
-                  volumeMounts:
-                      -   mountPath: /var/run/secrets/nais.io/vault
+            - name: helse-sparker
+              image: {{image}}
+              resources:
+                requests:
+                  memory: 256Mi
+                  cpu: 100m
+                limits:
+                  memory: 4096Mi
+                  cpu: 2000m
+              volumeMounts:
+                - mountPath: /var/run/secrets/nais.io/vault
                   name: vault-secrets
                   subPath: subpath/var/run/secrets/nais.io/vault
                 - mountPath: /var/run/secrets/nais.io/service_user
@@ -76,13 +76,13 @@ spec:
                 - -vault=https://vault.adeo.no
                 - -one-shot
                 - -save-token=/var/run/secrets/nais.io/vault/vault_token
-                - -cn=secret:kv/prod/fss/sparker/tbd:dir=/var/run/secrets/nais.io/vault,fmt=flatten,retries=1
-                - -cn=secret:serviceuser/data/prod/srvsparker:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
+                - -cn=secret:kv/prod/fss/helse-sparker/tbd:dir=/var/run/secrets/nais.io/vault,fmt=flatten,retries=1
+                - -cn=secret:serviceuser/data/prod/srvhelsesparker:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
               env:
                 - name: VAULT_AUTH_METHOD
                   value: kubernetes
-                -   name: VAULT_SIDEKICK_ROLE
-                    value: helse-sparker
+                - name: VAULT_SIDEKICK_ROLE
+                  value: helse-sparker
                 - name: VAULT_K8S_LOGIN_PATH
                   value: auth/kubernetes/prod/fss/login
           serviceAccount: podcreator
