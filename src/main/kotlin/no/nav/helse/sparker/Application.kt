@@ -65,7 +65,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     objectMapper.readTree(it.value())
                 }
                 .filter { node ->
-                    node["type"]?.asText() == "SykepengerUtbetalt_v1"
+                    node["@event_name"]?.asText() == "utbetalt"
                 }
                 .forEach { node ->
                     etterbetalingHåntdterer.håndter(node, producer)
