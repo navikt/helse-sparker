@@ -37,7 +37,9 @@ fun main() {
 
     val env = System.getenv()
     val dataSourceBuilder = DataSourceBuilder(env)
+    dataSourceBuilder.migrate()
     val dataSource = dataSourceBuilder.getDataSource()
+
 
     val startDate = LocalDate.of(2020, 5, 1)
     val fagsystemIdDao = PostgresFagsystemIdDao(dataSource)
