@@ -59,7 +59,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
 
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
     while (true) {
-        consumer.poll(Duration.ofMillis(100)).let { records ->
+        consumer.poll(Duration.ofMillis(5000)).let { records ->
             if (records.isEmpty) {
                 logger.info("Alle meldinger prosessert.")
                 consumer.unsubscribe()
