@@ -77,8 +77,18 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     node["@event_name"]?.asText() == "utbetalt"
                 }
                 .forEach { node ->
+                    logger.warn("Kom igjen filter!")
                     if (count++ % 100 == 0) logger.info("Har prosessert $count events")
                     etterbetalingHåntdterer.håndter(node, producer)
+                }
+            logger.info("leste ${records.count()} meldinger ")
+            records
+                .map {
+                    objectMapper.readTree(it.value())
+                }.groupBy { node ->
+                    node["@event_name"]?.asText()
+                }.forEach{
+                    logger.info("${it.key} : ${it.value.size} ")
                 }
         }
     }
