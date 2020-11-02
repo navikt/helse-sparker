@@ -43,7 +43,7 @@ spec:
             - name: KAFKA_RAPID_TOPIC
               value: helse-rapid-v1
             - name: DATABASE_HOST
-              value: fsspgdb.adeo.no
+              value: A01DBVL020.adeo.no
             - name: DATABASE_PORT
               value: "5432"
             - name: DATABASE_NAME
