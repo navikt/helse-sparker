@@ -48,6 +48,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
 
 
     var count = 0
+    val startMillis = System.currentTimeMillis()
 
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
     while (true) {
@@ -58,7 +59,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 consumer.close()
                 producer.flush()
                 producer.close()
-                logger.info("Prosessert $count utbetalinger")
+                logger.info("Prosessert $count utbetalinger på ${(System.currentTimeMillis() - startMillis) * 1000}s")
                 return
             }
             records
