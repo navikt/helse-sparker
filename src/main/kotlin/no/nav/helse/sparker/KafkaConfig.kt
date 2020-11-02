@@ -21,8 +21,7 @@ internal class KafkaConfig(
 
     internal fun consumerConfig() = Properties().apply {
         putAll(kafkaBaseConfig())
-        put(ConsumerConfig.GROUP_ID_CONFIG, "${UUID.randomUUID()}")
-        put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+        put(ConsumerConfig.GROUP_ID_CONFIG, "sparker")
     }
 
     internal fun producerConfig() = Properties().apply {
