@@ -6,11 +6,10 @@ metadata:
   name: helse-sparker
   namespace: tbd
 spec:
-    ttlSecondsAfterFinished: 3600
-    completions: 1
-    parallelism: 1
-    backoffLimit: 0
-    activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 3600
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0
   secureLogs:
     enabled: true
   template:
