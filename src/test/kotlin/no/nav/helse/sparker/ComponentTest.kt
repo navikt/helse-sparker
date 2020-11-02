@@ -45,7 +45,7 @@ internal class ComponentTest {
 
         val førsteFrværsdag = LocalDate.of(2020, 3, 1)
 
-        repeat(42) { producer.send(ProducerRecord(topic, utbetaling(førsteFrværsdag))) }
+        repeat(42) { producer.send(ProducerRecord(topic, utbetaling())) }
         repeat(10) { producer.send(ProducerRecord(topic, utbetaling_ikke_støttet(førsteFrværsdag))) }
         repeat(10) { producer.send(ProducerRecord(topic, bareTull(førsteFrværsdag))) }
         producer.flush()
@@ -98,7 +98,7 @@ private fun utbetaling_ikke_støttet(førsteFraværsdag: LocalDate) = """
 """
 
 @Language("JSON")
-private fun utbetaling(førsteFraværsdag: LocalDate) = """{
+private fun utbetaling() = """{
     "aktørId": "1000000000091",
     "fødselsnummer": "22027821111",
     "organisasjonsnummer": "971555001",

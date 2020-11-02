@@ -16,6 +16,7 @@ import java.io.File
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.system.exitProcess
 
 val objectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
@@ -33,11 +34,17 @@ fun main() {
             truststorePassword = env["NAV_TRUSTSTORE_PASSWORD"]
         )
     }
+
+    val env = System.getenv()
+    val dataSourceBuilder = DataSourceBuilder(env)
+    val dataSource = dataSourceBuilder.getDataSource()
+
     val startDate = LocalDate.of(2020, 5, 1)
     val fagsystemIdDao = FagsystemIdDaoMock()
 
     val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
     finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
+    exitProcess(0)
 }
 
 internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, etterbetalingHåntdterer: EtterbetalingHåndterer) {
@@ -59,7 +66,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 consumer.close()
                 producer.flush()
                 producer.close()
-                logger.info("Prosessert $count utbetalinger på ${(System.currentTimeMillis() - startMillis) * 1000}s")
+                logger.info("Prosessert $count utbetalinger på ${(System.currentTimeMillis() - startMillis) / 1000}s")
                 return
             }
             records
@@ -68,7 +75,6 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                 }
                 .filter { node ->
                     node["@event_name"]?.asText() == "utbetalt"
-                        && node["førsteFraværsdag"]?.asLocalDate()?.isAfter(startDate) ?: false
                 }
                 .forEach { node ->
                     if (count++ % 100 == 0) logger.info("Har prosessert $count events")
