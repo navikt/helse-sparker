@@ -10,7 +10,6 @@ spec:
   completions: 1
   parallelism: 1
   backoffLimit: 0
-  activeDeadlineSeconds: 3600
   secureLogs:
     enabled: true
   template:
