@@ -40,7 +40,7 @@ fun main() {
     val dataSource = dataSourceBuilder.getDataSource()
 
     val startDate = LocalDate.of(2020, 5, 1)
-    val fagsystemIdDao = FagsystemIdDaoMock()
+    val fagsystemIdDao = PostgresFagsystemIdDao(dataSource)
 
     val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
     finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
