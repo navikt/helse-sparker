@@ -76,3 +76,4 @@ jobs:
           CLUSTER: prod-fss
           RESOURCE: deploy/prod.yml,deploy/prod.yml
           IMAGE: ${{ needs.set_version.outputs.image }}
+          WAIT: false
