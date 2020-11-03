@@ -44,7 +44,7 @@ fun main() {
     val startDate = LocalDate.of(2020, 5, 1)
     val fagsystemIdDao = PostgresFagsystemIdDao(dataSource)
 
-    val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, startDate)
+    val etterbetalingHåntdterer = EtterbetalingHåndterer(fagsystemIdDao, config.topicName, LocalDate.now())
     finnUtbetalingerJob(config, startDate, etterbetalingHåntdterer)
     exitProcess(0)
 }
