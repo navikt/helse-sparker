@@ -22,6 +22,7 @@ internal class KafkaConfig(
     internal fun consumerConfig() = Properties().apply {
         putAll(kafkaBaseConfig())
         put(ConsumerConfig.GROUP_ID_CONFIG, "sparker")
+        put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
     }
 
     internal fun producerConfig() = Properties().apply {
