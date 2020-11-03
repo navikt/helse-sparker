@@ -36,10 +36,10 @@ class PostgresFagsystemIdDao(
             val query = """
                 INSERT INTO $table
                 (fagsystem_id)
-                values
-                ($fagsystemId)
+                VALUES
+                (?)
             """
-            session.run(queryOf(query).asUpdate)
+            session.run(queryOf(query, fagsystemId).asUpdate)
         })
     }
 }
