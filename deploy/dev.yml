@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: helse-sparker
-          image: {{image}}
+          image: docker.pkg.github.com/navikt/helse-sparker/sparker:<lim inn SHA her>
           resources:
             requests:
               memory: 256Mi
