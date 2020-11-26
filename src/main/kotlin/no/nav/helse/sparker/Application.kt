@@ -57,18 +57,14 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
 
 
     var count = 0
+    var finished = false
     val startMillis = System.currentTimeMillis()
 
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
-    while (true) {
+    while (!finished) {
         consumer.poll(Duration.ofMillis(5000)).let { records ->
-            if (records.isEmpty) {
-                consumer.unsubscribe()
-                consumer.close()
-                producer.flush()
-                producer.close()
-                logger.info("Prosessert $count utbetalinger på ${(System.currentTimeMillis() - startMillis) / 1000}s")
-                return
+            if (records.isEmpty || finished) {
+               finished = true
             }
             records
                 .map {
@@ -78,11 +74,21 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     node["@event_name"]?.asText() == "utbetalt"
                 }
                 .forEach { node ->
+                    if( count == 1000) {
+                        finished = true
+                        return@let
+                    }
                     if (count++ % 100 == 0) logger.info("Har prosessert $count events")
                     etterbetalingHåntdterer.håndter(node, producer)
                 }
         }
     }
+    consumer.unsubscribe()
+    consumer.close()
+    producer.flush()
+    producer.close()
+    logger.info("Prosessert $count utbetalinger på ${(System.currentTimeMillis() - startMillis) / 1000}s")
+
 }
 
 internal fun klargjørConsumer(kafkaConfig: KafkaConfig, startDate: LocalDate): KafkaConsumer<String, String> {
