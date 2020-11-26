@@ -68,7 +68,7 @@ internal class ComponentTest {
         val consumer = KafkaConsumer<String, String>(baseConfig().toConsumerConfig())
         consumer.assign(listOf(TopicPartition(topic, 0)))
         consumer.seekToBeginning(consumer.assignment())
-        assertEquals(62, consumer.poll(Duration.ofMillis(100)).count()) //TODO
+        assertEquals(63, consumer.poll(Duration.ofMillis(100)).count()) //TODO
     }
 
     @AfterAll
