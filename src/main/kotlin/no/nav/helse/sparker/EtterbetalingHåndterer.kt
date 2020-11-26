@@ -24,13 +24,11 @@ class EtterbetalingHåndterer(
         node["utbetalt"].filter { !it["utbetalingslinjer"].isEmpty }.forEach { utbetaling ->
             val fagsystemId = utbetaling["fagsystemId"].textValue()
             if (fagsystemIdDao.alleredeHåndtert(fagsystemId)) return
-            //producer.send(
-            ProducerRecord<String, String>(topic, objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato, fagsystemId)))
-            fagsystemIdDao.lagre(fagsystemId)
-            /*).get().let { _ ->
+            producer.send(
+            ProducerRecord(topic, objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato, fagsystemId)))
+            ).get().let { _ ->
                 fagsystemIdDao.lagre(fagsystemId)
-            }*/
-
+            }
         }
     }
 }
