@@ -74,7 +74,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     node["@event_name"]?.asText() == "utbetalt"
                 }
                 .forEach { node ->
-                    if( count == 1000) {
+                    if( count == 5000) {
                         finished = true
                         return@let
                     }
