@@ -63,7 +63,7 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
     Thread.setDefaultUncaughtExceptionHandler { _, throwable -> logger.error(throwable.message, throwable) }
     while (!finished) {
         consumer.poll(Duration.ofMillis(5000)).let { records ->
-            if (records.isEmpty || finished) {
+            if (records.isEmpty) {
                finished = true
             }
             records
@@ -74,10 +74,6 @@ internal fun finnUtbetalingerJob(config: KafkaConfig, startDate: LocalDate, ette
                     node["@event_name"]?.asText() == "utbetalt"
                 }
                 .forEach { node ->
-                    if( count == 5000) {
-                        finished = true
-                        return@let
-                    }
                     if (count++ % 100 == 0) logger.info("Har prosessert $count events")
                     etterbetalingHåntdterer.håndter(node, producer)
                 }
