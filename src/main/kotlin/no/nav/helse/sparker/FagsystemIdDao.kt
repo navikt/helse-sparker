@@ -7,7 +7,7 @@ import javax.sql.DataSource
 
 interface FagsystemIdDao {
 
-    fun alleredeHåndtert(id: String): Boolean
+    fun alleredeHåndtert(fagsystemId: String): Boolean
 
     fun lagre(fagsystemId: String)
 }
@@ -48,9 +48,9 @@ class FagsystemIdDaoMock : FagsystemIdDao {
 
     val lagredeIder = mutableListOf<String>()
 
-    override fun alleredeHåndtert(id: String): Boolean =
+    override fun alleredeHåndtert(fagsystemId: String): Boolean =
         lagredeIder.any {
-            it == id
+            it == fagsystemId
         }
 
     override fun lagre(fagsystemId: String) {

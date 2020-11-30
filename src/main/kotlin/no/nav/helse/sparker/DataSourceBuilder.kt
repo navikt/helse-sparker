@@ -12,6 +12,7 @@ internal class DataSourceBuilder(env: Map<String, String>) {
 
     private val vaultMountPath = env["VAULT_MOUNTPATH"]
     private val shouldGetCredentialsFromVault = vaultMountPath != null
+    private val cleanDatabase = env.getOrDefault("CLEAN_DATABASE", "false").toBoolean()
 
     // username and password is only needed when vault is not enabled,
     // since we rotate credentials automatically when vault is enabled
@@ -61,15 +62,18 @@ internal class DataSourceBuilder(env: Map<String, String>) {
             initSql = "SET ROLE \"$databaseName-${Role.Admin}\""
         }
 
-        runMigration(getDataSource(Role.Admin), initSql)
+        runMigration(getDataSource(Role.Admin), initSql, cleanDatabase)
     }
 
-    private fun runMigration(dataSource: DataSource, initSql: String? = null) =
+    private fun runMigration(dataSource: DataSource, initSql: String? = null, cleanDatabase: Boolean) =
         Flyway.configure()
             .dataSource(dataSource)
             .initSql(initSql)
-            .load()
-            .migrate()
+            .load().run {
+                if (cleanDatabase)
+                    clean()
+                migrate()
+            }
 
     enum class Role {
         Admin, User, ReadOnly;
