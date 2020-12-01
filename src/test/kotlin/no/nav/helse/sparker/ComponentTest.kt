@@ -12,6 +12,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -68,7 +69,23 @@ internal class ComponentTest {
         val consumer = KafkaConsumer<String, String>(baseConfig().toConsumerConfig())
         consumer.assign(listOf(TopicPartition(topic, 0)))
         consumer.seekToBeginning(consumer.assignment())
-        assertEquals(63, consumer.poll(Duration.ofMillis(100)).count()) //TODO
+        consumer.poll(Duration.ofMillis(100)).let {
+            val testdata = 42 + 10 + 10
+            val appdata = 1
+            assertEquals(testdata + appdata, it.count())
+            it.last().run {
+                assertEquals("22027821111", key())
+                mapOf(
+                    "fagsystemId" to "YNQXJGM73ZHPBBTM7LVG5RJPYM",
+                    "aktørId" to "1000000000091",
+                    "fødselsnummer" to "22027821111",
+                    "organisasjonsnummer" to "971555001",
+                    "gyldighetsdato" to "2020-12-01",
+                ).forEach { (key, value) ->
+                    assertTrue(value().contains(""""$key":"$value"""))
+                }
+            }
+        }
     }
 
     @AfterAll

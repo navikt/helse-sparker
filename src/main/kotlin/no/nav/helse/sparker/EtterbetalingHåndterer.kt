@@ -25,8 +25,12 @@ class EtterbetalingHåndterer(
             val fagsystemId = utbetaling["fagsystemId"].textValue()
             if (fagsystemIdDao.alleredeHåndtert(fagsystemId)) return
             producer.send(
-            ProducerRecord(topic, objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato, fagsystemId)))
-            ).get().let { _ ->
+                ProducerRecord(
+                    topic,
+                    node["fødselsnummer"].asText(),
+                    objectMapper.writeValueAsString(mapTilEtterbetalingEvent(node, gyldighetsdato, fagsystemId))
+                )
+            ).get().let {
                 fagsystemIdDao.lagre(fagsystemId)
             }
         }
