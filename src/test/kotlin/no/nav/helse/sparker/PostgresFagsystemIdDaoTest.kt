@@ -1,35 +1,30 @@
 package no.nav.helse.sparker
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Path
-import java.sql.Connection
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.testcontainers.containers.PostgreSQLContainer
 import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class PostgresFagsystemIdDaoTest {
 
-    private lateinit var embeddedPostgres: EmbeddedPostgres
-    private lateinit var postgresConnection: Connection
+    private val postgres = PostgreSQLContainer<Nothing>("postgres:13")
     private lateinit var dataSource: DataSource
     private lateinit var flyway: Flyway
     private lateinit var fagsystemIdDao: PostgresFagsystemIdDao
 
     @BeforeAll
-    internal fun setupAll(@TempDir postgresPath: Path) {
-        embeddedPostgres = EmbeddedPostgres.builder()
-            .setOverrideWorkingDirectory(postgresPath.toFile())
-            .setDataDirectory(postgresPath.resolve("datadir"))
-            .start()
-        postgresConnection = embeddedPostgres.postgresDatabase.connection
+    internal fun setupAll() {
+        postgres.start()
 
         dataSource = HikariDataSource(HikariConfig().apply {
-            jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
+            jdbcUrl = postgres.jdbcUrl
+            username = postgres.username
+            password = postgres.password
             maximumPoolSize = 3
             minimumIdle = 1
             idleTimeout = 10001
@@ -53,8 +48,7 @@ internal class PostgresFagsystemIdDaoTest {
 
     @AfterAll
     internal fun tearDown() {
-        postgresConnection.close()
-        embeddedPostgres.close()
+        postgres.stop()
     }
 
     @Test

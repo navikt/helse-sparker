@@ -1,6 +1,5 @@
 package no.nav.helse.sparker
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.junit.jupiter.api.AfterAll
@@ -9,17 +8,15 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Path
+import org.testcontainers.containers.PostgreSQLContainer
 import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class CleanDatabaseTest {
 
-    private lateinit var embeddedPostgres: EmbeddedPostgres
+    private val postgres = PostgreSQLContainer<Nothing>("postgres:13")
     private lateinit var dataSource: DataSource
 
-    private lateinit var jdbcUrl: String
     private lateinit var config: Map<String, String>
 
     @Test
@@ -41,17 +38,17 @@ internal class CleanDatabaseTest {
     }
 
     @BeforeAll
-    fun setup(@TempDir postgresPath: Path) {
-        embeddedPostgres = EmbeddedPostgres.builder()
-            .setOverrideWorkingDirectory(postgresPath.toFile())
-            .setDataDirectory(postgresPath.resolve("datadir"))
-            .start()
-        jdbcUrl = embeddedPostgres.getJdbcUrl("postgres", "postgres")
+    fun setup() {
+        postgres.start()
         config = mapOf(
-            "DATABASE_JDBC_URL" to jdbcUrl,
+            "DATABASE_JDBC_URL" to postgres.jdbcUrl,
+            "DATABASE_USERNAME" to postgres.username,
+            "DATABASE_PASSWORD" to postgres.password
         )
         dataSource = HikariDataSource(HikariConfig().apply {
-            jdbcUrl = this@CleanDatabaseTest.jdbcUrl
+            jdbcUrl = postgres.jdbcUrl
+            username = postgres.username
+            password = postgres.password
             maximumPoolSize = 3
             minimumIdle = 1
             idleTimeout = 10001
@@ -62,6 +59,6 @@ internal class CleanDatabaseTest {
 
     @AfterAll
     internal fun tearDown() {
-        embeddedPostgres.close()
+        postgres.stop()
     }
 }
