@@ -62,7 +62,7 @@ internal class ComponentTest {
             password = "password"
         )
         val daoMock = FagsystemIdDaoMock()
-        val etterbetalingHåntdterer = EtterbetalingHåndterer(daoMock, kafkaConfig.topicName, LocalDate.now())
+        val etterbetalingHåntdterer = EtterbetalingHåndterer(daoMock, kafkaConfig.topicName, LocalDate.of(2020, 12, 1))
 
         finnUtbetalingerJob(kafkaConfig, LocalDate.now(), etterbetalingHåntdterer)
 
