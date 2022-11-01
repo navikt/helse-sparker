@@ -1,0 +1,23 @@
+name: Bygg og deploy
+
+on:
+    push:
+        branches:
+            - test
+
+jobs:
+    snyk:
+        name: check vulnerabilities
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Install Snyk CLI
+              uses: snyk/actions/setup@master
+            - name: Monitor dependencies with Snyk continuously
+              run: snyk monitor --org=tbd-ty7
+              env:
+                  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+            - name: Check dependencies with Snyk on each build
+              run: snyk test --org=tbd-ty7 --severity-threshold=high
+              env:
+                  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
