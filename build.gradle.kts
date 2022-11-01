@@ -6,9 +6,8 @@ val jacksonVersion = "2.11.3"
 val testcontainersVersion = "1.16.2"
 
 plugins {
-    kotlin("jvm") version "1.4.10"
+    kotlin("jvm") version "1.7.0"
 }
-
 
 repositories {
     mavenCentral()
@@ -22,9 +21,9 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.4.10")
     implementation("org.flywaydb:flyway-core:7.0.4")
-    implementation("com.zaxxer:HikariCP:3.4.5")
+    implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("no.nav:vault-jdbc:1.3.7")
-    implementation("org.postgresql:postgresql:42.2.13")
+    implementation("org.postgresql:postgresql:42.5.0")
     implementation("com.github.seratch:kotliquery:1.3.1")
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("net.logstash.logback:logstash-logback-encoder:6.4") {
@@ -35,7 +34,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-
 
     testImplementation("no.nav:kafka-embedded-env:2.5.0")
     constraints {
@@ -57,10 +55,10 @@ dependencies {
 
 tasks {
     compileKotlin {
-        kotlinOptions.jvmTarget = "14"
+        kotlinOptions.jvmTarget = "17"
     }
     compileTestKotlin {
-        kotlinOptions.jvmTarget = "14"
+        kotlinOptions.jvmTarget = "17"
     }
 
     named<Jar>("jar") {
@@ -76,8 +74,9 @@ tasks {
         doLast {
             configurations.runtimeClasspath.get().forEach {
                 val file = File("$buildDir/libs/${it.name}")
-                if (!file.exists())
+                if (!file.exists()) {
                     it.copyTo(file)
+                }
             }
         }
     }
@@ -94,6 +93,6 @@ tasks {
     }
 
     withType<Wrapper> {
-        gradleVersion = "6.7"
+        gradleVersion = "7.4.2"
     }
 }

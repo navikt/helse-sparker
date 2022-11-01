@@ -7,12 +7,15 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import javax.sql.DataSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class PostgresFagsystemIdDaoTest {
 
-    private val postgres = PostgreSQLContainer<Nothing>("postgres:13")
+    private val postgres = PostgreSQLContainer<Nothing>("postgres:13").apply {
+        waitingFor(Wait.defaultWaitStrategy())
+    }
     private lateinit var dataSource: DataSource
     private lateinit var flyway: Flyway
     private lateinit var fagsystemIdDao: PostgresFagsystemIdDao
