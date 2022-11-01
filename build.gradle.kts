@@ -2,7 +2,8 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
 val kafkaVersion = "2.4.0"
 val junitJupiterVersion = "5.7.0"
-val jacksonVersion = "2.11.3"
+val jacksonVersionDatabind = "2.13.4.2"
+val jacksonVersion = "2.13.4"
 val testcontainersVersion = "1.16.2"
 
 plugins {
@@ -31,13 +32,13 @@ dependencies {
         exclude("com.fasterxml.jackson.dataformat")
     }
     implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersionDatabind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
-    testImplementation("no.nav:kafka-embedded-env:2.5.0")
+    testImplementation("no.nav:kafka-embedded-env:3.2.1")
     constraints {
-        testImplementation("org.apache.kafka:kafka_2.12:2.6.0")
+        testImplementation("org.apache.kafka:3.3.1")
         testImplementation("org.glassfish.jersey.core:jersey-server:2.31")
     }
     testImplementation("com.opentable.components:otj-pg-embedded:0.13.3")
