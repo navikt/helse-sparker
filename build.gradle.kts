@@ -36,7 +36,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
-    testImplementation("no.nav:kafka-embedded-env:3.2.1")
+    testImplementation("no.nav:kafka-embedded-env:2.5.0")
     constraints {
         testImplementation("org.apache.kafka:3.3.1")
         testImplementation("org.glassfish.jersey.core:jersey-server:2.31")
